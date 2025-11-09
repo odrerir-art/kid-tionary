@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Image as ImageIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, Image as ImageIcon, Volume2, VolumeX } from 'lucide-react';
 import VisualDefinition from './VisualDefinition';
 
 interface DefinitionCardProps {
@@ -16,7 +16,9 @@ interface DefinitionCardProps {
   pictureMode?: boolean;
   panelDescriptions?: string[];
   isMultiPanel?: boolean;
+  isFlagged?: boolean;
 }
+
 
 type ComplexityLevel = 'simple' | 'medium' | 'advanced';
 
@@ -29,8 +31,10 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
   needsColor = false, 
   pictureMode = false,
   panelDescriptions = [],
-  isMultiPanel = false
+  isMultiPanel = false,
+  isFlagged = false
 }) => {
+
   const getInitialLevel = (): ComplexityLevel => {
     const gradeNum = gradeLevel === 'K' ? 0 : parseInt(gradeLevel);
     if (gradeNum <= 2) return 'simple';
@@ -40,6 +44,7 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
 
   const [level, setLevel] = useState<ComplexityLevel>(getInitialLevel());
   const [showVisual, setShowVisual] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const handleSimplify = () => {
     if (level === 'advanced') setLevel('medium');
@@ -49,6 +54,25 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
   const handleExpand = () => {
     if (level === 'simple') setLevel('medium');
     else if (level === 'medium') setLevel('advanced');
+  };
+
+  const handleListen = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(definition[level]);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
   };
 
   const canSimplify = level !== 'simple';
@@ -91,23 +115,33 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
           <ChevronUp size={20} />
           More Detail
         </button>
-        {!noVisual && (
+        {!isFlagged && (
+          <button onClick={handleListen} className={`flex items-center gap-2 px-5 py-3 rounded-lg font-semibold transition-all ${isSpeaking ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-orange-500 text-white hover:bg-orange-600'} hover:scale-105`}>
+            {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            {isSpeaking ? 'Stop' : 'Listen'}
+          </button>
+        )}
+
+        {!noVisual && !isFlagged && (
           <button onClick={() => setShowVisual(!showVisual)} className="flex items-center gap-2 px-5 py-3 rounded-lg font-semibold bg-purple-500 text-white hover:bg-purple-600 hover:scale-105 transition-all">
             <ImageIcon size={20} />
             {showVisual ? 'Hide' : 'Show'} Picture
           </button>
         )}
+
       </div>
       
-      {showVisual && !noVisual && (
+      {showVisual && !noVisual && !isFlagged && (
         <VisualDefinition 
           word={word} 
           type="single" 
           needsColor={needsColor}
           panelDescriptions={panelDescriptions}
           isMultiPanel={isMultiPanel}
+          isFlagged={isFlagged}
         />
       )}
+
     </div>
   );
 };

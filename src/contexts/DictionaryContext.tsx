@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/components/ui/use-toast';
+import { mockDictionary } from '@/data/dictionaryData';
+
 
 interface Definition {
   simple: string;
@@ -22,7 +24,9 @@ interface WordData {
   needsColor?: boolean;
   panelDescriptions?: string[];
   isMultiPanel?: boolean;
+  isFlagged?: boolean;
 }
+
 
 
 
@@ -112,37 +116,86 @@ export const DictionaryProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     
     setWordSearchStartTime(Date.now());
     setIsLoading(true);
+    
+    const searchTerm = word.toLowerCase().trim();
+    
     try {
-      const { data, error } = await supabase.functions.invoke('generate-definition', {
-        body: { word: word.toLowerCase().trim(), gradeLevel }
+      // Check if word is flagged
+      const { data: flaggedData } = await supabase
+        .from('flagged_words')
+        .select('*')
+        .eq('word', searchTerm)
+        .single();
+
+      const isFlagged = !!flaggedData;
+
+      // First check mock dictionary for special words
+      const mockEntry = mockDictionary[searchTerm];
+      if (mockEntry && (mockEntry.isSound || mockEntry.isMadeUp || mockEntry.isNonEnglish)) {
+        const def = mockEntry.definitions[0];
+        setCurrentWord({
+          word: mockEntry.word,
+          type: def.partOfSpeech,
+          pronunciation: mockEntry.pronunciation || '',
+          definitions: def.levels,
+          example: def.example || '',
+          category: 'general',
+          isSound: mockEntry.isSound,
+          isMadeUp: mockEntry.isMadeUp,
+          isNonEnglish: mockEntry.isNonEnglish,
+          noVisual: mockEntry.noVisual,
+          needsColor: mockEntry.needsColor,
+          panelDescriptions: mockEntry.panelDescriptions,
+          isMultiPanel: mockEntry.isMultiPanel,
+          isFlagged
+        });
+        setSearchHistory(prev => [word, ...prev.filter(w => w !== word)].slice(0, 10));
+        toast({
+          title: "Word found!",
+          description: `Definition for "${word}" loaded.`
+        });
+        return;
+      }
+
+      // Try Free Dictionary API + AI generation
+      const { data, error } = await supabase.functions.invoke('fetch-dictionary-definition', {
+        body: { word: searchTerm }
       });
 
       if (error) throw error;
 
-      setCurrentWord(data);
-      setSearchHistory(prev => [word, ...prev.filter(w => w !== word)].slice(0, 10));
-      
-      // Track word search if student is logged in
-      if (currentStudent && wordSearchStartTime) {
-        const timeSpent = Math.floor((Date.now() - wordSearchStartTime) / 1000);
-        await trackWordSearch(word, timeSpent);
+      if (data) {
+        setCurrentWord({
+          word: data.word,
+          type: data.partOfSpeech,
+          pronunciation: data.phonetic,
+          definitions: data.definitions,
+          example: data.example,
+          category: 'general',
+          isFlagged
+        });
+        setSearchHistory(prev => [word, ...prev.filter(w => w !== word)].slice(0, 10));
+        
+        toast({
+          title: "Word found!",
+          description: `Definition for "${word}" loaded.`
+        });
       }
-      
-      toast({
-        title: "Word found!",
-        description: `Definition for "${word}" loaded successfully.`
-      });
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('Dictionary error:', error);
       toast({
-        title: "Oops!",
-        description: "Couldn't find that word. Try checking your spelling!",
+        title: "Word not found",
+        description: "Could not find a definition for this word.",
         variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
-  }, [gradeLevel, currentStudent, wordSearchStartTime]);
+  }, [gradeLevel]);
+
+
+
+
 
 
   const addToFavorites = (word: string) => {

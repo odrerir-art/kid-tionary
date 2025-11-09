@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, GraduationCap, HelpCircle, Trophy, ListChecks, Users, UserCircle, Brain } from 'lucide-react';
-
-
+import { BookOpen, GraduationCap, HelpCircle, Trophy, ListChecks, Users, UserCircle, Brain, LogOut, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { useDictionary } from '@/contexts/DictionaryContext';
+
 import GradeLevelSelector from './dictionary/GradeLevelSelector';
 import SearchBar from './dictionary/SearchBar';
 import SearchHistory from './dictionary/SearchHistory';
@@ -26,11 +27,14 @@ import { PersonalizedLearningPath } from './dictionary/PersonalizedLearningPath'
 
 
 const AppLayout: React.FC = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
   const { 
     currentWord, gradeLevel, searchHistory, favorites, isLoading, pictureMode,
     currentStudent, setCurrentStudent, logoutStudent,
     setGradeLevel, searchWord, addToFavorites, removeFromFavorites, clearHistory, togglePictureMode
   } = useDictionary();
+
 
   
   const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
@@ -73,18 +77,13 @@ const AppLayout: React.FC = () => {
          <div className="relative max-w-7xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-4">
             <div className="flex gap-2">
-              <button onClick={() => { setViewMode('dictionary'); setCustomQuizData(null); }} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'dictionary' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                <BookOpen size={20} />
-                <span className="text-sm font-semibold">Dictionary</span>
-              </button>
-              <button onClick={() => setViewMode('teacher-lists')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'teacher-lists' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                <GraduationCap size={20} />
-                <span className="text-sm font-semibold">Teacher Lists</span>
-              </button>
-              <button onClick={() => setViewMode('student-lists')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'student-lists' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                <ListChecks size={20} />
-                <span className="text-sm font-semibold">Student Practice</span>
-              </button>
+              {/* Show Home button only when not in dictionary view */}
+              {viewMode !== 'dictionary' && (
+                <button onClick={() => { setViewMode('dictionary'); setCustomQuizData(null); }} className="flex items-center gap-2 px-4 py-2 bg-white text-purple-600 rounded-lg transition-colors hover:bg-white/90">
+                  <BookOpen size={20} />
+                  <span className="text-sm font-semibold">Home</span>
+                </button>
+              )}
               {viewMode === 'dictionary' && (
                 <>
                   <button onClick={() => setShowQuiz(!showQuiz)} className="flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 rounded-lg transition-colors">
@@ -98,33 +97,33 @@ const AppLayout: React.FC = () => {
                 </>
               )}
             </div>
-            <div className="flex gap-2">
-              {currentStudent && (
-                <button onClick={() => setViewMode('learning-path')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'learning-path' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                  <Brain size={20} />
-                  <span className="text-sm font-semibold">My Learning Path</span>
+            <div className="flex gap-2 items-center">
+              {user && profile && (
+                <>
+                  <span className="text-sm bg-white/20 px-3 py-2 rounded-lg">
+                    {profile.username} ({profile.role})
+                  </span>
+                  {profile.role === 'admin' && (
+                    <button onClick={() => navigate('/admin')} className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
+                      <Shield size={20} />
+                      <span className="text-sm font-semibold">Admin</span>
+                    </button>
+                  )}
+                  <button onClick={() => signOut()} className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
+                    <LogOut size={20} />
+                    <span className="text-sm font-semibold">Logout</span>
+                  </button>
+                </>
+              )}
+              {!user && (
+                <button onClick={() => navigate('/login')} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-white/90 text-purple-600 rounded-lg transition-colors">
+                  <UserCircle size={20} />
+                  <span className="text-sm font-semibold">Login</span>
                 </button>
               )}
-              <button onClick={() => setViewMode('teacher-dashboard')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'teacher-dashboard' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                <Users size={20} />
-                <span className="text-sm font-semibold">Teacher Portal</span>
-              </button>
-              {currentStudent ? (
-                <button onClick={logoutStudent} className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg transition-colors">
-                  <UserCircle size={20} />
-                  <span className="text-sm font-semibold">Logout</span>
-                </button>
-              ) : (
-                <button onClick={() => setViewMode('student-login')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'student-login' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                  <UserCircle size={20} />
-                  <span className="text-sm font-semibold">Student Login</span>
-                </button>
-              )}
-              <button onClick={() => setViewMode('parent-portal')} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${viewMode === 'parent-portal' ? 'bg-white text-purple-600' : 'bg-white/20 hover:bg-white/30'}`}>
-                <Users size={20} />
-                <span className="text-sm font-semibold">Parent Portal</span>
-              </button>
             </div>
+
+
           </div>
 
           {viewMode === 'dictionary' && (
@@ -132,12 +131,51 @@ const AppLayout: React.FC = () => {
             <>
               <div className="text-center mb-8">
                 <div className="flex justify-center mb-4"><BookOpen size={64} className="animate-bounce" /></div>
-                <h1 className="text-5xl sm:text-6xl font-bold mb-4 drop-shadow-lg">Words Made Simple</h1>
-                <p className="text-xl sm:text-2xl opacity-95 mb-8">Learn new words with definitions you can understand!</p>
+                <h1 className="text-5xl sm:text-6xl font-bold mb-4 drop-shadow-lg">kid-tionary</h1>
+
+                <p className="text-xl sm:text-2xl opacity-95 mb-6">Learn new words with definitions you can understand!</p>
+                
+                {/* Quick Access Buttons */}
+                <div className="flex justify-center gap-3 mb-8 flex-wrap">
+                  <button onClick={() => setViewMode('teacher-lists')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                    <GraduationCap size={20} />
+                    <span className="text-sm font-semibold">Teacher Lists</span>
+                  </button>
+                  <button onClick={() => setViewMode('student-lists')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                    <ListChecks size={20} />
+                    <span className="text-sm font-semibold">Student Practice</span>
+                  </button>
+                  <button onClick={() => setViewMode('teacher-dashboard')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                    <Users size={20} />
+                    <span className="text-sm font-semibold">Teacher Portal</span>
+                  </button>
+                  {currentStudent ? (
+                    <>
+                      <button onClick={() => setViewMode('learning-path')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                        <Brain size={20} />
+                        <span className="text-sm font-semibold">My Learning Path</span>
+                      </button>
+                      <button onClick={logoutStudent} className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-md">
+                        <UserCircle size={20} />
+                        <span className="text-sm font-semibold">Student Logout</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button onClick={() => setViewMode('student-login')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                      <UserCircle size={20} />
+                      <span className="text-sm font-semibold">Student Login</span>
+                    </button>
+                  )}
+                  <button onClick={() => setViewMode('parent-portal')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
+                    <Users size={20} />
+                    <span className="text-sm font-semibold">Parent Portal</span>
+                  </button>
+                </div>
               </div>
               <SearchBar onSearch={handleSearch} isLoading={isLoading} />
             </>
           )}
+
           {viewMode === 'teacher-lists' && (
             <div className="text-center mb-8">
               <h1 className="text-5xl sm:text-6xl font-bold mb-4 drop-shadow-lg">Teacher Word Lists</h1>
@@ -296,7 +334,8 @@ const AppLayout: React.FC = () => {
       <footer className="bg-gradient-to-r from-blue-600 to-purple-600 text-white mt-16">
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8 text-center">
           <BookOpen size={40} className="mx-auto mb-3" />
-          <h3 className="text-2xl font-bold mb-2">Words Made Simple</h3>
+          <h3 className="text-2xl font-bold mb-2">kid-tionary</h3>
+
           <p className="text-blue-100 mb-4">Making vocabulary accessible for young learners everywhere</p>
           <p className="text-sm text-blue-200">Powered by AI • Designed for elementary students</p>
         </div>

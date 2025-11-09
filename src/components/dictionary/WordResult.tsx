@@ -21,7 +21,9 @@ interface WordData {
   needsColor?: boolean;
   panelDescriptions?: string[];
   isMultiPanel?: boolean;
+  isFlagged?: boolean;
 }
+
 
 interface WordResultProps {
   wordEntry: WordData;
@@ -92,7 +94,9 @@ const WordResult: React.FC<WordResultProps> = ({
         pictureMode={pictureMode}
         panelDescriptions={wordEntry.panelDescriptions}
         isMultiPanel={wordEntry.isMultiPanel}
+        isFlagged={wordEntry.isFlagged}
       />
+
     </div>
   );
 };

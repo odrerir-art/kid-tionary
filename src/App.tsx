@@ -5,8 +5,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import AdminPanel from "./components/admin/AdminPanel";
+import Subscription from "./pages/Subscription";
+
+
+
+
 
 const queryClient = new QueryClient();
 
@@ -17,10 +30,28 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminPanel />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/subscription" element={<Subscription />} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

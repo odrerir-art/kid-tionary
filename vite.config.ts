@@ -16,4 +16,27 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-components': [
+            '@/components/ui/button',
+            '@/components/ui/card',
+            '@/components/ui/dialog',
+            '@/components/ui/input',
+            '@/components/ui/select',
+            '@/components/ui/tabs',
+          ],
+          'dictionary': [
+            '@/components/dictionary/SearchBar',
+            '@/components/dictionary/WordResult',
+            '@/components/dictionary/DefinitionCard',
+          ],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 }));

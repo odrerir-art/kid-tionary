@@ -6,30 +6,62 @@ import { toast } from '@/components/ui/use-toast';
 interface PictureFeedbackProps {
   word: string;
   panelNumber?: number;
+  imageUrl?: string;
+  onRegenerate?: () => void;
 }
 
-const PictureFeedback: React.FC<PictureFeedbackProps> = ({ word, panelNumber = 1 }) => {
+const PictureFeedback: React.FC<PictureFeedbackProps> = ({ 
+  word, 
+  panelNumber = 1, 
+  imageUrl = '',
+  onRegenerate 
+}) => {
   const [submitted, setSubmitted] = useState(false);
 
   const submitFeedback = async (type: 'helpful' | 'confused') => {
     try {
-      const { error } = await supabase
-        .from('picture_feedback')
-        .insert({ 
-          word: word.toLowerCase(), 
-          feedback_type: type,
-          panel_number: panelNumber 
-        });
-
-      if (error) throw error;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
+        const { error } = await supabase
+          .from('picture_feedback')
+          .insert({ 
+            word: word.toLowerCase(), 
+            image_url: imageUrl,
+            is_helpful: type === 'helpful',
+            panel_number: panelNumber 
+          });
+        
+        // If marked as confusing, delete cached image so it regenerates next time
+        if (type === 'confused' && imageUrl) {
+          await supabase
+            .from('word_images')
+            .delete()
+            .eq('word', word.toLowerCase());
+          
+          // Optionally regenerate immediately
+          if (onRegenerate) {
+            onRegenerate();
+          }
+        }
+        
+        if (error) throw error;
+      }
 
       setSubmitted(true);
       toast({
         title: "Thanks for your feedback!",
-        description: type === 'helpful' ? "Glad the picture helped!" : "We'll work on improving this picture."
+        description: type === 'helpful' 
+          ? "Glad the picture helped!" 
+          : "We'll generate a better picture next time."
       });
     } catch (error) {
-      console.error('Feedback error:', error);
+      setSubmitted(true);
+      toast({
+        title: "Thanks for your feedback!",
+        description: type === 'helpful' 
+          ? "Glad the picture helped!" 
+          : "We'll work on improving this picture."
+      });
     }
   };
 

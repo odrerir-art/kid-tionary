@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PictureFeedback from './PictureFeedback';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 
 interface VisualDefinitionProps {
   word: string;
@@ -10,7 +11,9 @@ interface VisualDefinitionProps {
   needsColor?: boolean;
   panelDescriptions?: string[];
   isMultiPanel?: boolean;
+  isFlagged?: boolean;
 }
+
 
 const VisualDefinition: React.FC<VisualDefinitionProps> = ({ 
   word, 
@@ -18,7 +21,8 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
   imageUrl, 
   needsColor,
   panelDescriptions = [],
-  isMultiPanel = false
+  isMultiPanel = false,
+  isFlagged = false
 }) => {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [currentPanel, setCurrentPanel] = useState(0);
@@ -27,21 +31,46 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
   const totalPanels = isMultiPanel ? panelDescriptions.length : 1;
 
   useEffect(() => {
+    // Don't generate images for flagged words
+    if (isFlagged) return;
+    
     if (type === 'single' && !imageUrl && generatedImages.length === 0) {
-      generateImages();
+      checkAndLoadImages();
     }
-  }, [word]);
+  }, [word, isFlagged]);
+
+
+  const checkAndLoadImages = async () => {
+    try {
+      // Check if image exists in Supabase
+      const { data, error } = await supabase
+        .from('word_images')
+        .select('image_url')
+        .eq('word', word.toLowerCase())
+        .single();
+
+      if (data && !error) {
+        // Use cached image
+        setGeneratedImages([data.image_url]);
+      } else {
+        // Generate new image
+        await generateImages();
+      }
+    } catch (error) {
+      // If Supabase not configured, generate directly
+      await generateImages();
+    }
+  };
 
   const generateImages = async () => {
     setIsGenerating(true);
     try {
       if (isMultiPanel && panelDescriptions.length > 0) {
-        // Generate multiple panel images
         const images = await Promise.all(
           panelDescriptions.map(async (desc, index) => {
             const stylePrompt = needsColor 
               ? `colorful illustration: ${desc}, simple educational style for children, panel ${index + 1}`
-              : `simple black and white line drawing: ${desc}, coloring book style, clean lines, no shading, educational illustration`;
+              : `simple black and white line drawing: ${desc}, coloring book style, clean lines, no shading`;
             
             const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(stylePrompt)}?width=512&height=512&nologo=true`);
             return response.url;
@@ -49,13 +78,25 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
         );
         setGeneratedImages(images);
       } else {
-        // Generate single image
         const stylePrompt = needsColor 
           ? `colorful illustration of ${word}, simple and clear, educational style for children`
-          : `simple black and white line drawing of ${word}, coloring book style, clean lines, no shading, educational illustration for children`;
+          : `simple black and white line drawing of ${word}, coloring book style, clean lines, no shading`;
         
         const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(stylePrompt)}?width=512&height=512&nologo=true`);
-        setGeneratedImages([response.url]);
+        const imageUrl = response.url;
+        setGeneratedImages([imageUrl]);
+
+        // Store in Supabase for future use
+        try {
+          await supabase
+            .from('word_images')
+            .upsert({ 
+              word: word.toLowerCase(), 
+              image_url: imageUrl 
+            });
+        } catch (err) {
+          console.log('Could not cache image:', err);
+        }
       }
     } catch (error) {
       console.error('Error generating images:', error);
@@ -71,6 +112,17 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
   const handleNextPanel = () => {
     setCurrentPanel((prev) => (prev < totalPanels - 1 ? prev + 1 : 0));
   };
+
+  // Early return if word is flagged - should never happen but extra safety
+  if (isFlagged) {
+    return (
+      <div className="mt-4 bg-red-50 rounded-xl p-6 border-2 border-red-200">
+        <p className="text-center text-red-700 font-medium">
+          Pictures are not available for this word.
+        </p>
+      </div>
+    );
+  }
 
   if (type === 'single') {
     const displayImage = imageUrl || generatedImages[currentPanel];
@@ -90,24 +142,14 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
         <div className="mt-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200">
           {isMultiPanel && totalPanels > 1 && (
             <div className="flex justify-between items-center mb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrevPanel}
-                className="flex items-center gap-1"
-              >
+              <Button variant="outline" size="sm" onClick={handlePrevPanel} className="flex items-center gap-1">
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
               <span className="text-sm font-medium text-purple-700">
                 Panel {currentPanel + 1} of {totalPanels}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPanel}
-                className="flex items-center gap-1"
-              >
+              <Button variant="outline" size="sm" onClick={handleNextPanel} className="flex items-center gap-1">
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -115,11 +157,7 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
           )}
           
           <div className="flex justify-center">
-            <img
-              src={displayImage}
-              alt={`Visual representation of ${word}${isMultiPanel ? ` - Panel ${currentPanel + 1}` : ''}`}
-              className="max-w-xs rounded-lg shadow-md"
-            />
+            <img src={displayImage} alt={`Visual of ${word}`} className="max-w-xs rounded-lg shadow-md" />
           </div>
           
           {isMultiPanel && panelDescriptions[currentPanel] && (
@@ -128,7 +166,7 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
             </p>
           )}
           
-          <PictureFeedback word={word} panelNumber={currentPanel + 1} />
+          <PictureFeedback word={word} panelNumber={currentPanel + 1} imageUrl={displayImage} onRegenerate={generateImages} />
         </div>
       );
     }
