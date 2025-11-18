@@ -98,4 +98,6 @@ def extract_from_wordnet(output_file: str, limit: int = 10000):
     print(f"Extracted {len(definitions)} definitions to {output_file}")
 
 if __name__ == '__main__':
-    extract_from_wordnet('wordnet_definitions.json', limit=50000)
+    # Extract all WordNet entries (~117K synsets)
+    # The upsert in bulk-import-definitions will handle duplicates automatically
+    extract_from_wordnet('wordnet_definitions.json', limit=117000)

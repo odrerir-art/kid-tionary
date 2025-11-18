@@ -1,0 +1,28 @@
+// Updated fetch-dictionary-definition edge function with gradiated reading levels
+// Deploy this code to replace the existing function
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+};
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+
+// Gradiated vocabulary and complexity by grade level
+const getGradeLevelPrompt = (word: string, gradeLevel: string) => {
+  const prompts: Record<string, string> = {
+    'K': `Define "${word}" for kindergarten (ages 4-5). Use only the MOST COMMON meaning. Use 1-3 very simple words that a 5-year-old knows. Examples: cat=an animal, toy=thing to play with, big=very large.`,
+    '1': `Define "${word}" for 1st grade (ages 5-6). Use only the MOST COMMON meaning. Use 3-5 simple words. Examples: jump=to go up in the air, happy=feeling good, red=a color.`,
+    '2': `Define "${word}" for 2nd grade (ages 6-7). Use only the MOST COMMON meaning. Use 4-6 simple words. Examples: bicycle=thing with two wheels you ride, friend=someone you like, fast=moving quickly.`,
+    '3': `Define "${word}" for 3rd grade (ages 7-8). Use only the MOST COMMON meaning. Use 5-8 words. Examples: adventure=an exciting journey, curious=wanting to know about things.`,
+    '4': `Define "${word}" for 4th grade (ages 8-9). Use only the MOST COMMON meaning. Use 6-10 words. Can use slightly harder words. Examples: sufficient=enough of something, ancient=very very old.`,
+    '5': `Define "${word}" for 5th grade (ages 9-10). Use only the MOST COMMON meaning. Use 8-12 words. Examples: analyze=to look at something carefully to understand it.`,
+    '6': `Define "${word}" for 6th grade (ages 10-11). Use only the MOST COMMON meaning. Use 10-15 words. Can include context. Examples: democracy=a system where people vote to choose their leaders.`,
+    '7': `Define "${word}" for 7th grade (ages 11-12). Use only the MOST COMMON meaning. Use 12-18 words. Can be more detailed.`,
+    '8+': `Define "${word}" for 8th grade and up (ages 12+). Use only the MOST COMMON meaning. Use complete, clear definition with nuance.`
+  };
+  return prompts[gradeLevel] || prompts['5'];
+};
+
+// Rest of the function code continues...
+// See GRADIATED_READING_LEVELS.md for full implementation details

@@ -9,6 +9,7 @@ interface DefinitionCardProps {
     advanced: string;
   };
   word: string;
+  wordType?: string; // Part of speech
   example: string;
   gradeLevel: string;
   noVisual?: boolean;
@@ -20,11 +21,13 @@ interface DefinitionCardProps {
 }
 
 
+
 type ComplexityLevel = 'simple' | 'medium' | 'advanced';
 
 const DefinitionCard: React.FC<DefinitionCardProps> = ({ 
   definition, 
-  word, 
+  word,
+  wordType,
   example, 
   gradeLevel, 
   noVisual = false, 
@@ -34,6 +37,7 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
   isMultiPanel = false,
   isFlagged = false
 }) => {
+
 
   const getInitialLevel = (): ComplexityLevel => {
     const gradeNum = gradeLevel === 'K' ? 0 : parseInt(gradeLevel);
@@ -133,7 +137,8 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
       
       {showVisual && !noVisual && !isFlagged && (
         <VisualDefinition 
-          word={word} 
+          word={word}
+          wordType={wordType}
           type="single" 
           needsColor={needsColor}
           panelDescriptions={panelDescriptions}
@@ -143,6 +148,7 @@ const DefinitionCard: React.FC<DefinitionCardProps> = ({
       )}
 
     </div>
+
   );
 };
 

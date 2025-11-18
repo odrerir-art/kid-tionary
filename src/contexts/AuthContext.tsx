@@ -4,12 +4,12 @@ import { User, Session } from '@supabase/supabase-js';
 
 interface UserProfile {
   id: string;
-  auth_id: string;
-  username: string;
   email: string;
-  role: 'student' | 'teacher' | 'admin';
+  full_name: string | null;
+  role: 'student' | 'teacher' | 'admin' | 'parent';
   grade_level?: number;
 }
+
 
 interface AuthContextType {
   user: User | null;
@@ -61,12 +61,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async (authId: string) => {
+  const loadUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
-        .eq('auth_id', authId)
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
@@ -78,26 +78,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, username: string, role: string, gradeLevel?: number) => {
+  const signUp = async (email: string, password: string, fullName: string, role: string, gradeLevel?: number) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+          grade_level: gradeLevel
+        }
+      }
     });
 
     if (error) throw error;
     if (!data.user) throw new Error('Signup failed');
 
     // Create user profile
-    const { error: profileError } = await supabase.from('users').insert({
-      auth_id: data.user.id,
-      username,
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: data.user.id,
       email,
+      full_name: fullName,
       role,
       grade_level: gradeLevel,
     });
 
     if (profileError) throw profileError;
   };
+
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

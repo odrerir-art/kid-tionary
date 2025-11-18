@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, BookOpen, BarChart3, Database, Flag, CreditCard, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, BarChart3, Database, Flag, CreditCard, Menu, X, FileEdit, RefreshCw, ImageIcon } from 'lucide-react';
 import AdminDashboard from './AdminDashboard';
 import AdminUsers from './AdminUsers';
 import AdminWords from './AdminWords';
@@ -9,6 +9,10 @@ import AdminAnalytics from './AdminAnalytics';
 import DictionaryAdmin from '../dictionary/DictionaryAdmin';
 import { FlaggedWordsManager } from './FlaggedWordsManager';
 import { PayPalSettings } from './PayPalSettings';
+import { BulkDefinitionReview } from './BulkDefinitionReview';
+import { BulkDefinitionRegenerator } from './BulkDefinitionRegenerator';
+import { BulkImageUploader } from './BulkImageUploader';
+
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -18,17 +22,24 @@ export default function AdminPanel() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'words', label: 'Words', icon: BookOpen },
+    { id: 'review', label: 'Review Definitions', icon: FileEdit },
+    { id: 'regenerate', label: 'Regenerate Definitions', icon: RefreshCw },
+    { id: 'images', label: 'Manage Images', icon: ImageIcon },
     { id: 'flagged', label: 'Flagged Words', icon: Flag },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'paypal', label: 'PayPal Settings', icon: CreditCard },
     { id: 'import', label: 'Import Data', icon: Database },
   ];
 
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <AdminDashboard />;
       case 'users': return <AdminUsers />;
       case 'words': return <AdminWords />;
+      case 'review': return <BulkDefinitionReview />;
+      case 'regenerate': return <BulkDefinitionRegenerator />;
+      case 'images': return <BulkImageUploader />;
       case 'flagged': return <FlaggedWordsManager />;
       case 'analytics': return <AdminAnalytics />;
       case 'paypal': return <PayPalSettings />;
@@ -36,6 +47,7 @@ export default function AdminPanel() {
       default: return <AdminDashboard />;
     }
   };
+
 
   return (
     <div className="flex h-screen bg-gray-50">

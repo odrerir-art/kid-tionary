@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 interface VisualDefinitionProps {
   word: string;
   type: 'single' | 'comic';
+  wordType?: string; // Part of speech (noun, verb, adjective, etc.)
   imageUrl?: string;
   needsColor?: boolean;
   panelDescriptions?: string[];
@@ -17,13 +18,15 @@ interface VisualDefinitionProps {
 
 const VisualDefinition: React.FC<VisualDefinitionProps> = ({ 
   word, 
-  type, 
+  type,
+  wordType,
   imageUrl, 
   needsColor,
   panelDescriptions = [],
   isMultiPanel = false,
   isFlagged = false
 }) => {
+
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [currentPanel, setCurrentPanel] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -31,7 +34,6 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
   const totalPanels = isMultiPanel ? panelDescriptions.length : 1;
 
   useEffect(() => {
-    // Don't generate images for flagged words
     if (isFlagged) return;
     
     if (type === 'single' && !imageUrl && generatedImages.length === 0) {
@@ -39,10 +41,8 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
     }
   }, [word, isFlagged]);
 
-
   const checkAndLoadImages = async () => {
     try {
-      // Check if image exists in Supabase
       const { data, error } = await supabase
         .from('word_images')
         .select('image_url')
@@ -50,14 +50,11 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
         .single();
 
       if (data && !error) {
-        // Use cached image
         setGeneratedImages([data.image_url]);
       } else {
-        // Generate new image
         await generateImages();
       }
     } catch (error) {
-      // If Supabase not configured, generate directly
       await generateImages();
     }
   };
@@ -68,25 +65,18 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
       if (isMultiPanel && panelDescriptions.length > 0) {
         const images = await Promise.all(
           panelDescriptions.map(async (desc, index) => {
-            const stylePrompt = needsColor 
-              ? `colorful illustration: ${desc}, simple educational style for children, panel ${index + 1}`
-              : `simple black and white line drawing: ${desc}, coloring book style, clean lines, no shading`;
-            
-            const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(stylePrompt)}?width=512&height=512&nologo=true`);
+            const prompt = `Educational illustration for children: ${desc}. Simple, clear, uncluttered. Panel ${index + 1}. White background. No text or words in image.`;
+            const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`);
             return response.url;
           })
         );
         setGeneratedImages(images);
       } else {
-        const stylePrompt = needsColor 
-          ? `colorful illustration of ${word}, simple and clear, educational style for children`
-          : `simple black and white line drawing of ${word}, coloring book style, clean lines, no shading`;
-        
-        const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(stylePrompt)}?width=512&height=512&nologo=true`);
+        const prompt = buildEducationalPrompt(word, wordType, needsColor);
+        const response = await fetch(`https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=512&height=512&nologo=true`);
         const imageUrl = response.url;
         setGeneratedImages([imageUrl]);
 
-        // Store in Supabase for future use
         try {
           await supabase
             .from('word_images')
@@ -105,15 +95,41 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
     }
   };
 
-  const handlePrevPanel = () => {
-    setCurrentPanel((prev) => (prev > 0 ? prev - 1 : totalPanels - 1));
+
+  const buildEducationalPrompt = (word: string, wordType?: string, needsColor?: boolean): string => {
+    const baseStyle = needsColor 
+      ? "Simple colorful illustration for children's dictionary"
+      : "Simple black and white line drawing, coloring book style";
+    
+    // Normalize word type to lowercase for comparison
+    const type = wordType?.toLowerCase() || '';
+    
+    // Part-of-speech specific prompt strategies
+    if (type.includes('noun')) {
+      // NOUNS: Show the object/thing clearly
+      return `${baseStyle}: Single isolated ${word} object on plain white background. Clear, uncluttered view of what a ${word} looks like. Educational object illustration for elementary students. No text, no labels, no busy details. Just the ${word} itself, clearly visible and easy to identify.`;
+    }
+    
+    if (type.includes('verb')) {
+      // VERBS: Show action/movement with simple diagram
+      return `${baseStyle}: Simple action diagram showing someone or something ${word}ing. Clear illustration of the action of '${word}'. Movement arrows or simple sequence. Plain white background. Educational action illustration for elementary students. No text, no labels. Focus on the action being performed.`;
+    }
+    
+    if (type.includes('adjective')) {
+      // ADJECTIVES: Show comparison or clear example of the quality
+      return `${baseStyle}: Side-by-side comparison illustration showing '${word}' quality. Two simple examples demonstrating what ${word} means versus not ${word}. Plain white background. Educational comparison diagram for elementary students. No text, no labels. Clear visual contrast showing the quality.`;
+    }
+    
+    if (type.includes('adverb')) {
+      // ADVERBS: Show action with manner/way indicated
+      return `${baseStyle}: Simple illustration showing an action done ${word}. Clear diagram demonstrating how something is done '${word}'. Plain white background. Educational manner illustration for elementary students. No text, no labels. Focus on showing the manner or way of doing something.`;
+    }
+    
+    // DEFAULT: General educational illustration
+    return `${baseStyle}: Single isolated ${word} on plain white background. Clear, uncluttered, educational. Perfect for teaching vocabulary to elementary students. No text, no labels, no busy details. Just the ${word} itself, clearly visible and easy to understand.`;
   };
 
-  const handleNextPanel = () => {
-    setCurrentPanel((prev) => (prev < totalPanels - 1 ? prev + 1 : 0));
-  };
 
-  // Early return if word is flagged - should never happen but extra safety
   if (isFlagged) {
     return (
       <div className="mt-4 bg-red-50 rounded-xl p-6 border-2 border-red-200">
@@ -142,14 +158,14 @@ const VisualDefinition: React.FC<VisualDefinitionProps> = ({
         <div className="mt-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border-2 border-purple-200">
           {isMultiPanel && totalPanels > 1 && (
             <div className="flex justify-between items-center mb-4">
-              <Button variant="outline" size="sm" onClick={handlePrevPanel} className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPanel((prev) => (prev > 0 ? prev - 1 : totalPanels - 1))}>
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
               <span className="text-sm font-medium text-purple-700">
                 Panel {currentPanel + 1} of {totalPanels}
               </span>
-              <Button variant="outline" size="sm" onClick={handleNextPanel} className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPanel((prev) => (prev < totalPanels - 1 ? prev + 1 : 0))}>
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>

@@ -86,7 +86,8 @@ const WordResult: React.FC<WordResultProps> = ({
 
       <DefinitionCard 
         definition={wordEntry.definitions} 
-        word={wordEntry.word} 
+        word={wordEntry.word}
+        wordType={wordEntry.type}
         example={wordEntry.example} 
         gradeLevel={gradeLevel} 
         noVisual={wordEntry.noVisual} 
@@ -96,6 +97,7 @@ const WordResult: React.FC<WordResultProps> = ({
         isMultiPanel={wordEntry.isMultiPanel}
         isFlagged={wordEntry.isFlagged}
       />
+
 
     </div>
   );
