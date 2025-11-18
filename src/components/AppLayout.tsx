@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { BookOpen, GraduationCap, HelpCircle, Trophy, ListChecks, Users, UserCircle, Brain, LogOut, Shield } from 'lucide-react';
+import { BookOpen, GraduationCap, HelpCircle, Trophy, ListChecks, Users, Brain, LogOut, Shield } from 'lucide-react';
+import { TeacherIcon, StudentIcon, ParentIcon } from '@/components/ui/user-icons';
+
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDictionary } from '@/contexts/DictionaryContext';
@@ -97,12 +99,15 @@ const AppLayout: React.FC = () => {
                 </>
               )}
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-3 items-center">
               {user && profile && (
                 <>
-                  <span className="text-sm bg-white/20 px-3 py-2 rounded-lg">
-                    {profile.username} ({profile.role})
-                  </span>
+                  <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
+                    {profile.role === 'teacher' && <TeacherIcon className="w-8 h-8" />}
+                    {profile.role === 'student' && <StudentIcon className="w-8 h-8" />}
+                    {profile.role === 'parent' && <ParentIcon className="w-8 h-8" />}
+                    {profile.role === 'admin' && <Shield size={32} />}
+                  </div>
                   {profile.role === 'admin' && (
                     <button onClick={() => navigate('/admin')} className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition-colors">
                       <Shield size={20} />
@@ -117,14 +122,12 @@ const AppLayout: React.FC = () => {
               )}
               {!user && (
                 <button onClick={() => navigate('/login')} className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-white/90 text-purple-600 rounded-lg transition-colors">
-                  <UserCircle size={20} />
                   <span className="text-sm font-semibold">Login</span>
                 </button>
               )}
             </div>
-
-
           </div>
+
 
           {viewMode === 'dictionary' && (
 
@@ -145,32 +148,8 @@ const AppLayout: React.FC = () => {
                     <ListChecks size={20} />
                     <span className="text-sm font-semibold">Student Practice</span>
                   </button>
-                  <button onClick={() => setViewMode('teacher-dashboard')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
-                    <Users size={20} />
-                    <span className="text-sm font-semibold">Teacher Portal</span>
-                  </button>
-                  {currentStudent ? (
-                    <>
-                      <button onClick={() => setViewMode('learning-path')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
-                        <Brain size={20} />
-                        <span className="text-sm font-semibold">My Learning Path</span>
-                      </button>
-                      <button onClick={logoutStudent} className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-md">
-                        <UserCircle size={20} />
-                        <span className="text-sm font-semibold">Student Logout</span>
-                      </button>
-                    </>
-                  ) : (
-                    <button onClick={() => setViewMode('student-login')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
-                      <UserCircle size={20} />
-                      <span className="text-sm font-semibold">Student Login</span>
-                    </button>
-                  )}
-                  <button onClick={() => setViewMode('parent-portal')} className="flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-white text-purple-600 rounded-lg transition-colors shadow-md">
-                    <Users size={20} />
-                    <span className="text-sm font-semibold">Parent Portal</span>
-                  </button>
                 </div>
+
               </div>
               <SearchBar onSearch={handleSearch} isLoading={isLoading} />
             </>

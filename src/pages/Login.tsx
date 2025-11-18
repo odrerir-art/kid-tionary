@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDictionary } from '@/contexts/DictionaryContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Loader2, GraduationCap, Users, UserCircle } from 'lucide-react';
+import { BookOpen, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TeacherIcon, StudentIcon, ParentIcon } from '@/components/ui/user-icons';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,10 +17,9 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loginType, setLoginType] = useState('teacher');
   const { signIn } = useAuth();
-  const { setCurrentStudent } = useDictionary();
   const navigate = useNavigate();
 
-  const handleTeacherLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -42,17 +41,17 @@ export default function Login() {
             <BookOpen className="w-10 h-10 text-purple-600" />
           </div>
           <CardTitle className="text-2xl">Welcome to Kid-tionary</CardTitle>
-          <CardDescription>Choose your login type below</CardDescription>
+          <CardDescription>Choose your role and login</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs value={loginType} onValueChange={setLoginType} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="teacher"><GraduationCap className="w-4 h-4 mr-1" />Teacher</TabsTrigger>
-              <TabsTrigger value="student"><UserCircle className="w-4 h-4 mr-1" />Student</TabsTrigger>
-              <TabsTrigger value="parent"><Users className="w-4 h-4 mr-1" />Parent</TabsTrigger>
+              <TabsTrigger value="teacher"><TeacherIcon className="w-5 h-5 mr-1" />Teacher</TabsTrigger>
+              <TabsTrigger value="student"><StudentIcon className="w-5 h-5 mr-1" />Student</TabsTrigger>
+              <TabsTrigger value="parent"><ParentIcon className="w-5 h-5 mr-1" />Parent</TabsTrigger>
             </TabsList>
             <TabsContent value="teacher">
-              <form onSubmit={handleTeacherLogin} className="space-y-4 mt-4">
+              <form onSubmit={handleLogin} className="space-y-4 mt-4">
                 <div><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="teacher@school.com" /></div>
                 <div><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" /></div>
                 {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
@@ -60,8 +59,22 @@ export default function Login() {
                 <Button type="submit" className="w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logging in...</> : 'Login as Teacher'}</Button>
               </form>
             </TabsContent>
-            <TabsContent value="student"><div className="text-center py-8"><p className="text-gray-600 mb-4">Student login is available on the main page</p><Button onClick={() => navigate('/')} className="w-full">Go to Home Page</Button></div></TabsContent>
-            <TabsContent value="parent"><div className="text-center py-8"><p className="text-gray-600 mb-4">Parent portal access is available on the main page</p><Button onClick={() => navigate('/')} className="w-full">Go to Home Page</Button></div></TabsContent>
+            <TabsContent value="student">
+              <form onSubmit={handleLogin} className="space-y-4 mt-4">
+                <div><Label htmlFor="student-email">Email</Label><Input id="student-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="student@school.com" /></div>
+                <div><Label htmlFor="student-password">Password</Label><Input id="student-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" /></div>
+                {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logging in...</> : 'Login as Student'}</Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="parent">
+              <form onSubmit={handleLogin} className="space-y-4 mt-4">
+                <div><Label htmlFor="parent-email">Email</Label><Input id="parent-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="parent@email.com" /></div>
+                <div><Label htmlFor="parent-password">Password</Label><Input id="parent-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" /></div>
+                {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                <Button type="submit" className="w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Logging in...</> : 'Login as Parent'}</Button>
+              </form>
+            </TabsContent>
           </Tabs>
           <div className="mt-6 space-y-3">
             <div className="text-center text-sm">Don't have an account? <Link to="/signup" className="text-purple-600 hover:underline font-semibold">Sign up</Link></div>

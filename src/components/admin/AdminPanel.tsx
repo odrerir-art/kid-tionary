@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, Users, BookOpen, BarChart3, Database, Flag, CreditCard, Menu, X, FileEdit, RefreshCw, ImageIcon } from 'lucide-react';
+import { LayoutDashboard, Users, BookOpen, BarChart3, Database, Flag, CreditCard, Menu, X, FileEdit, RefreshCw, ImageIcon, Image } from 'lucide-react';
+
 import AdminDashboard from './AdminDashboard';
 import AdminUsers from './AdminUsers';
 import AdminWords from './AdminWords';
@@ -12,6 +13,8 @@ import { PayPalSettings } from './PayPalSettings';
 import { BulkDefinitionReview } from './BulkDefinitionReview';
 import { BulkDefinitionRegenerator } from './BulkDefinitionRegenerator';
 import { BulkImageUploader } from './BulkImageUploader';
+import { ImageReviewManager } from './ImageReviewManager';
+
 
 
 export default function AdminPanel() {
@@ -25,6 +28,8 @@ export default function AdminPanel() {
     { id: 'review', label: 'Review Definitions', icon: FileEdit },
     { id: 'regenerate', label: 'Regenerate Definitions', icon: RefreshCw },
     { id: 'images', label: 'Manage Images', icon: ImageIcon },
+    { id: 'review-images', label: 'Review Images', icon: Image },
+
     { id: 'flagged', label: 'Flagged Words', icon: Flag },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'paypal', label: 'PayPal Settings', icon: CreditCard },
@@ -40,6 +45,8 @@ export default function AdminPanel() {
       case 'review': return <BulkDefinitionReview />;
       case 'regenerate': return <BulkDefinitionRegenerator />;
       case 'images': return <BulkImageUploader />;
+      case 'review-images': return <ImageReviewManager />;
+
       case 'flagged': return <FlaggedWordsManager />;
       case 'analytics': return <AdminAnalytics />;
       case 'paypal': return <PayPalSettings />;

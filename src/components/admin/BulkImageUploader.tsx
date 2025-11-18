@@ -3,12 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Upload, Sparkles, Download, Image as ImageIcon } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { searchEducationalImage } from '@/lib/imageService';
 
 export function BulkImageUploader() {
   const [uploading, setUploading] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [wordList, setWordList] = useState('');
   const { toast } = useToast();
 
@@ -56,35 +57,36 @@ export function BulkImageUploader() {
     });
   };
 
-  const handleAIGeneration = async () => {
+  const handlePixabayFetch = async () => {
     const words = wordList.split('\n').map(w => w.trim()).filter(Boolean);
     if (words.length === 0) {
-      toast({ title: 'Error', description: 'Please enter words to generate', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Please enter words to fetch', variant: 'destructive' });
       return;
     }
 
-    setGenerating(true);
+    setFetching(true);
     let successCount = 0;
 
     for (const word of words) {
       try {
-        const { data, error } = await supabase.functions.invoke('generate-definition', {
-          body: { word, generateImage: true }
-        });
-
-        if (!error && data?.imageUrl) {
+        const result = await searchEducationalImage(word);
+        if (result) {
+          await supabase.from('word_images').upsert({
+            word: word.toLowerCase(),
+            image_url: result.url
+          });
           successCount++;
         }
       } catch (error) {
-        console.error(`Error generating image for ${word}:`, error);
+        console.error(`Error fetching image for ${word}:`, error);
       }
     }
 
-    setGenerating(false);
+    setFetching(false);
     setWordList('');
     toast({
-      title: 'Generation Complete',
-      description: `${successCount} images generated successfully.`
+      title: 'Fetch Complete',
+      description: `${successCount} images fetched from Pixabay successfully.`
     });
   };
 
@@ -110,21 +112,21 @@ export function BulkImageUploader() {
 
       <Card className="p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5" />
-          AI Image Generation
+          <Download className="w-5 h-5" />
+          Fetch from Pixabay
         </h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Generate images for words using AI. Enter one word per line.
+          Automatically fetch educational images from Pixabay. Enter one word per line.
         </p>
         <textarea
           className="w-full h-40 p-3 border rounded-md"
           placeholder="cat&#10;dog&#10;house&#10;tree"
           value={wordList}
           onChange={(e) => setWordList(e.target.value)}
-          disabled={generating}
+          disabled={fetching}
         />
-        <Button onClick={handleAIGeneration} disabled={generating} className="mt-4">
-          {generating ? 'Generating...' : 'Generate Images'}
+        <Button onClick={handlePixabayFetch} disabled={fetching} className="mt-4">
+          {fetching ? 'Fetching...' : 'Fetch Images from Pixabay'}
         </Button>
       </Card>
 
@@ -134,11 +136,10 @@ export function BulkImageUploader() {
           Free Image Sources
         </h3>
         <ul className="space-y-2 text-sm">
+          <li>• <strong>Pixabay</strong> - Free educational images (integrated above)</li>
           <li>• <strong>OpenClipart</strong> - Public domain clipart (openclipart.org)</li>
-          <li>• <strong>Pixabay</strong> - Free stock photos and illustrations</li>
-          <li>• <strong>Unsplash</strong> - High-quality free photos</li>
-          <li>• <strong>Pexels</strong> - Free stock photos</li>
           <li>• <strong>Wikimedia Commons</strong> - Public domain images</li>
+          <li>• <strong>Unsplash</strong> - High-quality free photos (requires attribution)</li>
         </ul>
       </Card>
     </div>

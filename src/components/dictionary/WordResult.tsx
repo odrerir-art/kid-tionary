@@ -1,18 +1,30 @@
 import React from 'react';
 import { Heart, Printer, Sparkles } from 'lucide-react';
 import DefinitionCard from './DefinitionCard';
+import MultiDefinitionCard from './MultiDefinitionCard';
 import PronunciationButton from './PronunciationButton';
 
-interface WordData {
-  word: string;
-  type: string;
-  pronunciation: string;
+interface DefinitionEntry {
+  partOfSpeech: string;
   definitions: {
     simple: string;
     medium: string;
     advanced: string;
   };
   example: string;
+}
+
+interface WordData {
+  word: string;
+  type?: string;
+  pronunciation: string;
+  definitions?: {
+    simple: string;
+    medium: string;
+    advanced: string;
+  };
+  definitionEntries?: DefinitionEntry[];
+  example?: string;
   category: string;
   isSound?: boolean;
   isMadeUp?: boolean;
@@ -23,6 +35,7 @@ interface WordData {
   isMultiPanel?: boolean;
   isFlagged?: boolean;
 }
+
 
 
 interface WordResultProps {
@@ -53,6 +66,8 @@ const WordResult: React.FC<WordResultProps> = ({
 
   const badge = getCategoryBadge();
 
+  const hasMultipleDefinitions = wordEntry.definitionEntries && wordEntry.definitionEntries.length > 1;
+
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl">
@@ -63,7 +78,12 @@ const WordResult: React.FC<WordResultProps> = ({
               <Sparkles className="text-yellow-300" size={24} />
             </div>
             <p className="text-xl opacity-90 mb-1">{wordEntry.pronunciation}</p>
-            <p className="text-lg opacity-80 italic">{wordEntry.type}</p>
+            {!hasMultipleDefinitions && wordEntry.type && (
+              <p className="text-lg opacity-80 italic">{wordEntry.type}</p>
+            )}
+            {hasMultipleDefinitions && (
+              <p className="text-lg opacity-80 italic">Multiple meanings</p>
+            )}
             {badge && (
               <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${badge.color}`}>
                 {badge.text}
@@ -84,21 +104,31 @@ const WordResult: React.FC<WordResultProps> = ({
         </div>
       </div>
 
-      <DefinitionCard 
-        definition={wordEntry.definitions} 
-        word={wordEntry.word}
-        wordType={wordEntry.type}
-        example={wordEntry.example} 
-        gradeLevel={gradeLevel} 
-        noVisual={wordEntry.noVisual} 
-        needsColor={wordEntry.needsColor} 
-        pictureMode={pictureMode}
-        panelDescriptions={wordEntry.panelDescriptions}
-        isMultiPanel={wordEntry.isMultiPanel}
-        isFlagged={wordEntry.isFlagged}
-      />
-
-
+      {hasMultipleDefinitions ? (
+        <MultiDefinitionCard
+          word={wordEntry.word}
+          definitions={wordEntry.definitionEntries!}
+          gradeLevel={gradeLevel}
+          noVisual={wordEntry.noVisual}
+          needsColor={wordEntry.needsColor}
+          pictureMode={pictureMode}
+          isFlagged={wordEntry.isFlagged}
+        />
+      ) : (
+        <DefinitionCard 
+          definition={wordEntry.definitions!} 
+          word={wordEntry.word}
+          wordType={wordEntry.type}
+          example={wordEntry.example!} 
+          gradeLevel={gradeLevel} 
+          noVisual={wordEntry.noVisual} 
+          needsColor={wordEntry.needsColor} 
+          pictureMode={pictureMode}
+          panelDescriptions={wordEntry.panelDescriptions}
+          isMultiPanel={wordEntry.isMultiPanel}
+          isFlagged={wordEntry.isFlagged}
+        />
+      )}
     </div>
   );
 };
